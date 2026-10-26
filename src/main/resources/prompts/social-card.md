@@ -20,6 +20,8 @@ Request:
    natural ones (speed for cycling, pace /100 m for swimming).
 4. Format them exactly as they must appear: `21.10 km`, `1:38:42`, `4:41 /km`, `+184 m`,
    `152 bpm`, date as `26 OCT 2026`. Never round differently from Garmin, never invent a value.
+5. If you shorten the activity name for a title, keep its meaning and normalise the spacing:
+   one space around `+`, `-`, `·` and `x` (`16 + 8`, `5 x 1k`), no double spaces.
 
 If a stat is missing, drop it; do not estimate it.
 
@@ -42,16 +44,24 @@ not give one, ask the format too: story 9:16, post 4:5 or square 1:1).
 Rules for the image prompt (in English: image models follow English best; only the quoted text
 on the image is in my language):
 
-- Start with: "Edit the attached photo." Keep the person **identical**: same face, body,
-  pose, clothes, background. Do not beautify, slim, age or change skin tone. Only add graphics
-  and a light colour grade.
+- Start with: "Edit the attached photo." Keep **every person in the photo identical**: same
+  faces, bodies, poses, clothes, background; the photo may show more than one person, e.g. a
+  running partner. Do not beautify, slim, age or change skin tone. Only add graphics and a light
+  colour grade.
 - Put every string to render in double quotes, exactly once, and say "render this text exactly,
   no other text or numbers".
 - Say where each element goes, and that no graphic may cover the face.
 - Give the aspect ratio and size: story 9:16 (1080x1920), post 4:5 (1080x1350), square 1:1
-  (1080x1080). Keep text inside the safe area (story: 250 px free at top and bottom).
+  (1080x1080).
+- Safe area, stated as percentages (image models follow them better than pixels): for a story,
+  **nothing** - no text, no logo, no barcode - in the top 14% and bottom 14% of the image; for
+  post and square, keep 6% free on every edge. Say it twice: once near the top of the prompt and
+  once in the final check line.
+- Before writing the prompt, re-read every quoted string against the stats line: same digits,
+  same separators, spacing as in step 1.
 - Typography, colours, effect, as per the style.
-- End with: "Photorealistic, high quality, sharp text."
+- End with: "Final check: every quoted string rendered exactly once, nothing in the safe-area
+  margins. Photorealistic, high quality, sharp text."
 
 ## 4. Output, in this order
 
@@ -74,11 +84,11 @@ These show format and level of detail only. The numbers are invented: never reus
 **Stats used**: 10.02 km · 47:15 · 4:43 /km · +62 m · 158 bpm · Sunday Long Run · 12 OCT 2026
 
 ```
-Edit the attached photo. Keep the person identical: same face, body, pose, clothes and
-background; do not beautify or alter them. Only add graphics and a light colour grade.
+Edit the attached photo. Keep every person in the photo identical: same faces, bodies, poses,
+clothes and background; do not beautify or alter them. Only add graphics and a light colour grade.
 
-Output: vertical 9:16, 1080x1920. Keep all text inside the safe area (250 px free at top and
-bottom). No graphic may cover the face.
+Output: vertical 9:16, 1080x1920. Leave the top 14% and the bottom 14% of the image completely
+free of text and graphics. No graphic may cover a face.
 
 Add a soft black-to-transparent gradient over the bottom third. On it, left-aligned:
 - small caps, letter-spaced, 70% white: "SUNDAY LONG RUN · 12 OCT 2026"
@@ -89,6 +99,7 @@ Font: thin geometric sans-serif (like Inter Light), tabular numbers, generous sp
 Colour grade: slightly warmer, +10% contrast.
 Render this text exactly, no other text or numbers.
 
+Final check: every quoted string rendered exactly once, nothing in the top 14% or bottom 14%.
 Photorealistic, high quality, sharp text.
 ```
 
@@ -104,10 +115,10 @@ must read 47:15".
 **Stats used**: 21.10 km · 1:38:42 · 4:41 /km · +184 m · Half Marathon · 19 OCT 2026
 
 ```
-Edit the attached photo. Keep the person identical: same face, body, pose, clothes and
-background; do not beautify or alter them. Only add graphics and a colour grade.
+Edit the attached photo. Keep every person in the photo identical: same faces, bodies, poses,
+clothes and background; do not beautify or alter them. Only add graphics and a colour grade.
 
-Output: portrait 4:5, 1080x1350. No graphic may cover the face.
+Output: portrait 4:5, 1080x1350. Keep 6% free on every edge. No graphic may cover a face.
 
 Behind the runner (depth effect: the person stays in front of the text), a huge bold condensed
 sans-serif number spanning the full width, white with 85% opacity: "21.1"
@@ -117,6 +128,7 @@ Bottom-right, stacked, right-aligned, medium weight: "1:38:42" / "4:41 /KM" / "+
 Colour grade: high-contrast, desaturated background, warm skin tones kept natural.
 Render this text exactly, no other text or numbers.
 
+Final check: every quoted string rendered exactly once, nothing within 6% of the edges.
 Photorealistic, high quality, sharp text.
 ```
 

@@ -217,8 +217,9 @@ Workflow:
    image model with the fix suggested in the tip (e.g. `fix the text: the time must read 1:38:42`).
 5. Post it, with the caption Claude wrote.
 
-The prompt tells the image model to keep you **identical** (no beautifying, no body changes),
-to keep graphics off your face and to render only the quoted text. Image models can still
+The prompt tells the image model to keep everyone in the photo **identical** (no beautifying, no body changes),
+to keep graphics off faces and out of the areas Instagram covers in stories, and to render only
+the quoted text. Image models can still
 misspell numbers, so the stats line is there for a final check. By default no map or start
 location is used, and heart rate is left out on request.
 
