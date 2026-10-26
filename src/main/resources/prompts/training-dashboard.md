@@ -13,7 +13,8 @@ recovery (HRV, sleep, resting heart rate, body battery) move together. Answer in
 3. `getHrvRange` from {{startDate}} to {{today}}. If Garmin rejects the range, split it into
    chunks of 4 weeks.
 4. For the **last 14 days** only: `getSleep` and `getDailySummary`, one call per day.
-5. Call `getActivity` only for the 3 most recent activities, to show their laps/splits.
+5. Call `getActivityLaps` only for the 3 most recent activities, to show their laps (km splits,
+   intervals, warm-up/cool-down).
 
 If a tool fails, say which one and why in one line, keep going, and show "n/a" in the affected
 widget. **Never invent, interpolate or estimate missing values.**

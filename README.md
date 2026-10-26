@@ -231,8 +231,9 @@ Prompt text and worked examples:
 | Tool | Endpoint | Notes |
 |---|---|---|
 | `listActivities` | `/activitylist-service/activities/search/activities` | compact summary (km, pace, HR, cadence, ascent); `raw=true` for full JSON |
-| `getActivity` | `/activity-service/activity/{id}` | summary, metadata, splits/laps |
-| `downloadActivityFit` | `/download-service/files/activity/{id}` | saves `{id}.fit` under `garmin.data-dir/fit` |
+| `getActivity` | `/activity-service/activity/{id}` | summary, metadata, segments by type |
+| `getActivityLaps` | `/download-service/files/activity/{id}` | laps decoded from the .FIT file: km, time, pace or speed, HR, cadence, ascent, power, intensity |
+| `downloadActivityFit` | `/download-service/files/activity/{id}` | saves `{id}.fit` under `garmin.data-dir/fit` (cached: downloaded once) |
 | `getHrvRange` | `/hrv-service/hrv/daily/{from}/{to}` | overnight HRV |
 | `getDailyHeartRate` | `/wellness-service/wellness/dailyHeartRate` | includes resting HR |
 | `getSleep` | `/sleep-service/sleep/dailySleep` | date = the morning you woke up |
@@ -284,6 +285,9 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
   return it as JSON or as plain text; both are handled.
 - **Content negotiation**: JSON calls send `Accept: application/json` and retry once with `*/*`
   on `406`.
+- **Laps**: the Personal API has no laps endpoint, so `getActivityLaps` downloads the original
+  .FIT file once (cached under `garmin.data-dir/fit`) and decodes its lap messages with the
+  official [Garmin FIT SDK](https://github.com/garmin/fit-java-sdk).
 - **Code map**:
   - `GarminApiClient`: HTTP, token lifecycle, retries
   - `GarminTools`: MCP tools (`@Tool` methods)
@@ -301,4 +305,5 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The Garmin FIT SDK dependency is distributed under the
+[FIT Protocol License](https://github.com/garmin/fit-java-sdk/blob/main/LICENSE.txt).

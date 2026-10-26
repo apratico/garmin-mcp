@@ -14,7 +14,8 @@ Request:
 ## 1. Get the data
 
 1. If the activity is "latest", call `listActivities` with `limit` = 1; otherwise use that id.
-2. Call `getActivity` for the full detail (laps/splits, location name, elevation, HR).
+2. Call `getActivity` for the full detail (location name, elevation, HR) and `getActivityLaps`
+   for the laps: km splits for the `splits` style, the fast block of an interval or tempo run.
 3. Pick **at most 5 stats** for the image. Default for a run: distance, moving time, average pace,
    elevation gain, average HR. For a race or a PB, lead with the time. For other sports use the
    natural ones (speed for cycling, pace /100 m for swimming).

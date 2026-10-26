@@ -1,5 +1,10 @@
 package it.pratico.garminmcp;
 
+import com.garmin.fit.FitDecoder;
+import com.garmin.fit.FitMessages;
+import com.garmin.fit.FitRuntimeException;
+import com.garmin.fit.LapMesg;
+import com.garmin.fit.Sport;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -10,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -78,26 +84,69 @@ public class GarminTools {
             Returns the absolute path of the saved .fit file (second-by-second HR, cadence, speed, laps).""")
     public String downloadActivityFit(@ToolParam(description = "Garmin activity id") long activityId)
             throws IOException {
-        byte[] data = api.getBytes("/download-service/files/activity/" + activityId, Map.of());
-        Path dir = Path.of(props.dataDir(), "fit");
-        Files.createDirectories(dir);
-        Path target = dir.resolve(activityId + ".fit");
-        if (isZip(data)) {
-            try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(data))) {
-                ZipEntry e;
-                while ((e = zip.getNextEntry()) != null) {
-                    if (!e.isDirectory() && e.getName().toLowerCase().endsWith(".fit")) {
-                        Files.write(target, zip.readAllBytes());
-                        return result(target);
-                    }
+        Path fit = fetchFit(activityId);
+        return "{\"path\":\"" + fit.toAbsolutePath() + "\",\"bytes\":" + Files.size(fit) + "}";
+    }
+
+    @Tool(description = """
+            Laps of an activity as recorded by the watch (manual laps, auto-lap every km, or workout
+            steps), read from the original .FIT file. One row per lap: distance (km), timer time,
+            pace (min/km, foot sports) or speed (km/h), average/max HR, cadence (spm for running),
+            ascent/descent, average power, intensity (active/rest/warmup/cooldown) and lap trigger.
+            Use it for intervals and per-km splits; getActivity does not have them.""")
+    public String getActivityLaps(@ToolParam(description = "Garmin activity id") long activityId)
+            throws IOException {
+        FitMessages fit;
+        try (InputStream in = Files.newInputStream(fetchFit(activityId))) {
+            fit = new FitDecoder().decode(in);
+        } catch (FitRuntimeException e) {
+            throw new GarminApiClient.GarminApiException("Cannot decode the .FIT file of " + activityId
+                    + ": " + e.getMessage(), e);
+        }
+        Sport sport = fit.getSessionMesgs().isEmpty() ? null : fit.getSessionMesgs().getFirst().getSport();
+        boolean foot = sport == Sport.RUNNING || sport == Sport.WALKING || sport == Sport.HIKING;
+
+        ArrayNode laps = mapper.createArrayNode();
+        int n = 0;
+        for (LapMesg lap : fit.getLapMesgs()) {
+            ObjectNode o = laps.addObject();
+            o.put("lap", ++n);
+            float dist = orZero(lap.getTotalDistance());
+            float timer = orZero(lap.getTotalTimerTime());
+            Float speed = lap.getEnhancedAvgSpeed() != null ? lap.getEnhancedAvgSpeed() : lap.getAvgSpeed();
+            o.put("km", round(dist / 1000.0, 2));
+            o.put("time", hms(timer));
+            if (speed != null && speed > 0) {
+                if (foot) {
+                    o.put("pace", hms(1000.0 / speed) + "/km");
+                } else {
+                    o.put("kmh", round(speed * 3.6, 1));
                 }
             }
-            Path zipFile = dir.resolve(activityId + ".zip");
-            Files.write(zipFile, data);
-            return "{\"warning\":\"zip without .fit entry\",\"path\":\"" + zipFile.toAbsolutePath() + "\"}";
+            putIfSet(o, "avgHR", lap.getAvgHeartRate());
+            putIfSet(o, "maxHR", lap.getMaxHeartRate());
+            if (lap.getAvgCadence() != null) {
+                double cadence = lap.getAvgCadence() + orZero(lap.getAvgFractionalCadence());
+                // FIT stores running cadence as strides per minute; Garmin Connect shows steps per minute
+                o.put(foot ? "cadenceSpm" : "cadence", Math.round(foot ? cadence * 2 : cadence));
+            }
+            putIfSet(o, "ascentM", lap.getTotalAscent());
+            putIfSet(o, "descentM", lap.getTotalDescent());
+            putIfSet(o, "avgPowerW", lap.getAvgPower());
+            if (lap.getIntensity() != null) {
+                o.put("intensity", lap.getIntensity().name().toLowerCase());
+            }
+            if (lap.getLapTrigger() != null) {
+                o.put("trigger", lap.getLapTrigger().name().toLowerCase());
+            }
         }
-        Files.write(target, data);
-        return result(target);
+        ObjectNode out = mapper.createObjectNode();
+        out.put("activityId", activityId);
+        if (sport != null) {
+            out.put("sport", sport.name().toLowerCase());
+        }
+        out.set("laps", laps);
+        return out.toString();
     }
 
     // ------------------------------------------------------------------ health
@@ -193,12 +242,44 @@ public class GarminTools {
         return null;
     }
 
-    private static boolean isZip(byte[] d) {
-        return d.length > 4 && d[0] == 'P' && d[1] == 'K';
+    /** Downloads the original .FIT file once and keeps it in {@code <data-dir>/fit}. */
+    private Path fetchFit(long activityId) throws IOException {
+        Path dir = Path.of(props.dataDir(), "fit");
+        Path target = dir.resolve(activityId + ".fit");
+        if (Files.isRegularFile(target) && Files.size(target) > 0) {
+            return target;
+        }
+        byte[] data = api.getBytes("/download-service/files/activity/" + activityId, Map.of());
+        Files.createDirectories(dir);
+        if (!isZip(data)) {
+            Files.write(target, data);
+            return target;
+        }
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(data))) {
+            ZipEntry e;
+            while ((e = zip.getNextEntry()) != null) {
+                if (!e.isDirectory() && e.getName().toLowerCase().endsWith(".fit")) {
+                    Files.write(target, zip.readAllBytes());
+                    return target;
+                }
+            }
+        }
+        throw new GarminApiClient.GarminApiException("The download of activity " + activityId
+                + " is a zip without a .fit file");
     }
 
-    private static String result(Path p) throws IOException {
-        return "{\"path\":\"" + p.toAbsolutePath() + "\",\"bytes\":" + Files.size(p) + "}";
+    private static void putIfSet(ObjectNode o, String name, Number v) {
+        if (v != null) {
+            o.put(name, v.longValue());
+        }
+    }
+
+    private static float orZero(Float v) {
+        return v == null ? 0f : v;
+    }
+
+    private static boolean isZip(byte[] d) {
+        return d.length > 4 && d[0] == 'P' && d[1] == 'K';
     }
 
     private static double round(double v, int decimals) {
