@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: garmin-mcp
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        name: garmin-personal
+        version: 0.1.0
+        type: SYNC
+        stdio: true
+
+# stdio transport: NOTHING may be written to stdout except MCP messages.
+# logback-spring.xml defines a file appender only (no console).
+logging:
+  file:
+    name: ${user.home}/.cache/garmin-mcp/garmin-mcp.log
+  level:
+    root: WARN
+    it.pratico.garminmcp: INFO
+
+garmin:
+  base-url: https://personal.connectapi.garmin.com
+  # The API key is read from env GARMIN_PERSONAL_API_KEY, or from this file (chmod 600).
+  api-key-file: ${user.home}/.config/garmin-mcp/api-key
+  # Where downloaded .FIT files are saved
+  data-dir: ${user.home}/workspace/garmin-data

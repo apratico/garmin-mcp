@@ -1,0 +1,10 @@
+target/
+.idea/
+*.iml
+.vscode/
+api-key
+*.fit
+*.zip
+.env
+garmin-dashboard.html
+.claude/
