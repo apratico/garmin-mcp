@@ -4,9 +4,12 @@ An [MCP](https://modelcontextprotocol.io) server that connects Claude to your ow
 data through the official **Garmin Connect Personal API**: activities, original `.FIT` files,
 HRV, sleep, daily heart rate, HR zones and daily summaries, with no manual exports.
 
-It ships with a ready-made **training + recovery dashboard** prompt: one click and Claude pulls
-your last weeks of data and builds an interactive dashboard that puts training load next to HRV,
-sleep and resting heart rate.
+It ships with two ready-made prompts:
+
+- **training-dashboard**: Claude pulls your last weeks of data and builds an interactive
+  dashboard that puts training load next to HRV, sleep and resting heart rate;
+- **social-card**: Claude turns a workout into a prompt for an image model (e.g. Gemini
+  "Nano Banana") that adds your real stats to your own photo, for Instagram or WhatsApp.
 
 Works with **Claude Desktop** and **Claude Code** (and any other MCP client that speaks stdio).
 
@@ -30,11 +33,12 @@ flowchart LR
 4. [Connect to Claude Desktop](#3a-connect-to-claude-desktop)
 5. [Connect to Claude Code](#3b-connect-to-claude-code)
 6. [The training dashboard prompt](#the-training-dashboard-prompt)
-7. [Tools](#tools)
-8. [Configuration](#configuration)
-9. [Troubleshooting](#troubleshooting)
-10. [How it works](#how-it-works)
-11. [Security and terms](#security-and-terms)
+7. [The social card prompt](#the-social-card-prompt)
+8. [Tools](#tools)
+9. [Configuration](#configuration)
+10. [Troubleshooting](#troubleshooting)
+11. [How it works](#how-it-works)
+12. [Security and terms](#security-and-terms)
 
 ## Requirements
 
@@ -146,6 +150,51 @@ It never invents missing values: a failed call shows up as "n/a" in the affected
 The prompt text lives in
 [`src/main/resources/prompts/training-dashboard.md`](src/main/resources/prompts/training-dashboard.md):
 edit it and rebuild to change the dashboard, or copy it into any chat by hand.
+
+## The social card prompt
+
+Turn a photo from your run into an Instagram / WhatsApp card with your real stats on it.
+The `social-card` prompt makes Claude fetch the workout from Garmin and write a ready-to-paste
+prompt for an image-editing model such as **Gemini 2.5 Flash Image ("Nano Banana")**; you attach
+your photo there and get the edited image back.
+
+| Argument | Values | Default |
+|---|---|---|
+| `activityId` | a Garmin activity id | latest activity |
+| `style` | `clean`, `poster`, `neon`, `bib`, `magazine`, `splits` | Claude shows the menu |
+| `format` | `story` (9:16), `post` (4:5), `square` (1:1) | Claude asks |
+
+| Style | Look |
+|---|---|
+| `clean` | minimal bottom gradient, one row of thin white stats |
+| `poster` | huge condensed number behind the runner (depth effect) |
+| `neon` | night grade, glowing cyan/magenta stats |
+| `bib` | stats printed on a pinned paper race bib |
+| `magazine` | running magazine cover with cover lines |
+| `splits` | glass card with a bar chart of the km splits |
+
+What you get back:
+
+1. the stats used, to double-check them;
+2. the image prompt, in one code block;
+3. an Instagram caption and a WhatsApp status line;
+4. a tip on fixing the text if the image model misspells a number.
+
+Workflow:
+
+1. Claude Desktop: **+** → *garmin* → `social-card` (or in Claude Code:
+   `/mcp__garmin__social-card <activityId> poster story`).
+2. Copy the image prompt.
+3. In Gemini (app or AI Studio), attach your photo, paste the prompt, generate.
+4. Check the numbers on the image; if one is wrong, follow the tip.
+
+The prompt tells the image model to keep you **identical** (no beautifying, no body changes),
+to keep graphics off your face and to render only the quoted text. Image models can still
+misspell numbers, so the stats line is there for a final check. By default no map or start
+location is used, and heart rate is left out on request.
+
+Prompt text and worked examples:
+[`src/main/resources/prompts/social-card.md`](src/main/resources/prompts/social-card.md).
 
 ## Tools
 
