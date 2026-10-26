@@ -149,8 +149,8 @@ It never invents missing values: a failed call shows up as "n/a" in the affected
   for permission. In Claude Code, allow them for good with `/permissions` → add `mcp__garmin`.
 - **Fresh session**: after a rebuild, prompts and tools change only in a new Claude Code session
   or after a full Claude Desktop restart.
-- **Activity id**: the number at the end of the activity URL on Garmin Connect
-  (`connect.garmin.com/modern/activity/<id>`), or ask Claude "list my last 5 activities".
+- **Activity id**: the number at the end of the activity page URL on Garmin Connect web, or ask
+  Claude "list my last 5 activities".
 
 ### Run it
 
