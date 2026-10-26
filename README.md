@@ -142,10 +142,25 @@ The server exposes an MCP prompt, `training-dashboard`, with one optional argume
 
 It never invents missing values: a failed call shows up as "n/a" in the affected widget.
 
+### Before you run a prompt
+
+- **Permissions**: the dashboard makes about 30 tool calls (sleep and daily summary are fetched
+  one day at a time). In Claude Desktop, answer **Allow always** the first time a garmin tool asks
+  for permission. In Claude Code, allow them for good with `/permissions` → add `mcp__garmin`.
+- **Fresh session**: after a rebuild, prompts and tools change only in a new Claude Code session
+  or after a full Claude Desktop restart.
+- **Activity id**: the number at the end of the activity URL on Garmin Connect
+  (`connect.garmin.com/modern/activity/<id>`), or ask Claude "list my last 5 activities".
+
+### Run it
+
 | Client | How to run it | Output |
 |---|---|---|
-| Claude Desktop | **+** → *garmin* → `training-dashboard` → set `weeks` | interactive artifact |
-| Claude Code | `/mcp__garmin__training-dashboard 12` | `garmin-dashboard.html` in the current directory |
+| Claude Desktop | **+** in the message box → *garmin* → `training-dashboard` → set `weeks` (or leave empty) → send | interactive artifact |
+| Claude Code | `/mcp__garmin__training-dashboard 8` | `garmin-dashboard.html` in the current directory; open it with `xdg-open` (Linux) or `open` (macOS) |
+
+In Claude Code the file is ignored by git (`.gitignore`), so running the prompt from inside this
+repository will not dirty it.
 
 The prompt text lives in
 [`src/main/resources/prompts/training-dashboard.md`](src/main/resources/prompts/training-dashboard.md):
@@ -182,11 +197,25 @@ What you get back:
 
 Workflow:
 
-1. Claude Desktop: **+** → *garmin* → `social-card` (or in Claude Code:
-   `/mcp__garmin__social-card <activityId> poster story`).
-2. Copy the image prompt.
-3. In Gemini (app or AI Studio), attach your photo, paste the prompt, generate.
-4. Check the numbers on the image; if one is wrong, follow the tip.
+1. **Ask Claude for the prompt**
+   - Claude Desktop: **+** in the message box → *garmin* → `social-card` → fill the arguments
+     (all optional) → send.
+   - Claude Code: arguments are positional, in the order `activityId style format`; use
+     `latest` for the most recent activity:
+
+     ```
+     /mcp__garmin__social-card latest poster story
+     /mcp__garmin__social-card 24843355045 bib post
+     ```
+2. **Copy** the image prompt from the code block.
+3. **Generate the image**
+   - [Gemini app](https://gemini.google.com): pick the image model (Nano Banana), attach your
+     photo, paste the prompt, send.
+   - [Google AI Studio](https://aistudio.google.com): model `gemini-2.5-flash-image`, set the
+     aspect ratio to match the format, attach the photo, paste the prompt, run.
+4. **Check the numbers** on the image against the stats line; if one is wrong, reply to the
+   image model with the fix suggested in the tip (e.g. `fix the text: the time must read 1:38:42`).
+5. Post it, with the caption Claude wrote.
 
 The prompt tells the image model to keep you **identical** (no beautifying, no body changes),
 to keep graphics off your face and to render only the quoted text. Image models can still
