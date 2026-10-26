@@ -1,9 +1,9 @@
 package it.pratico.garminmcp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -156,7 +156,7 @@ public class GarminTools {
         copy(a, o, "activityId", "id");
         copy(a, o, "activityName", "name");
         if (a.has("activityType")) {
-            o.put("type", a.path("activityType").path("typeKey").asText(null));
+            o.put("type", a.path("activityType").path("typeKey").asString(null));
         }
         copy(a, o, "startTimeLocal", "start");
         double distM = a.path("distance").asDouble(0);

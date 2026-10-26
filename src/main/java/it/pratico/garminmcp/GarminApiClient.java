@@ -1,7 +1,8 @@
 package it.pratico.garminmcp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -59,7 +60,7 @@ public class GarminApiClient {
         byte[] body = get(path, query, "application/json");
         try {
             return mapper.readTree(body);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new GarminApiException("Response is not JSON: " + preview(body), e);
         }
     }
@@ -151,6 +152,8 @@ public class GarminApiClient {
             tokenExpiresAt = Instant.now().plus(ttl);
             log.info("Obtained Garmin access token, valid until {}", tokenExpiresAt);
             return accessToken;
+        } catch (JacksonException e) {
+            throw new GarminApiException("Token response is not valid JSON: " + e.getOriginalMessage(), e);
         } catch (IOException e) {
             throw new GarminApiException("Network error obtaining token: " + e.getMessage(), e);
         } catch (InterruptedException e) {
@@ -206,17 +209,15 @@ public class GarminApiClient {
     private static String firstText(JsonNode json, String... names) {
         for (String n : names) {
             JsonNode v = json.get(n);
-            if (v != null && v.isTextual() && !v.asText().isBlank()) {
-                return v.asText();
+            if (v != null && v.isString() && !v.asString().isBlank()) {
+                return v.asString();
             }
         }
         return null;
     }
 
     private static String fieldNames(JsonNode json) {
-        StringBuilder sb = new StringBuilder();
-        json.fieldNames().forEachRemaining(n -> sb.append(n).append(' '));
-        return sb.toString().trim();
+        return String.join(" ", json.propertyNames());
     }
 
     private static String preview(byte[] body) {

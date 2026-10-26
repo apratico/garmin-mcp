@@ -13,7 +13,7 @@ It ships with two ready-made prompts:
 
 Works with **Claude Desktop** and **Claude Code** (and any other MCP client that speaks stdio).
 
-- Java 21, Spring Boot 3.5, Spring AI 1.0 MCP server (stdio transport)
+- Java 21, Spring Boot 4.1, Spring AI 2.0, MCP Java SDK 2.1 (stdio transport, protocol 2025-06-18)
 - Read-only: the Personal API has no write endpoints
 - The API key never leaves your machine and is never logged
 
